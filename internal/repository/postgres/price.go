@@ -59,7 +59,7 @@ func (r *priceRepository) Get(ctx context.Context, id string) (*price.Price, err
 	rows, err := r.db.NamedQueryContext(ctx, query, map[string]interface{}{
 		"id":        id,
 		"tenant_id": types.GetTenantID(ctx),
-		"status":    types.StatusActive,
+		"status":    types.StatusPublished,
 	})
 
 	// TODO: Handle not found error better to not throw 500
@@ -89,7 +89,7 @@ func (r *priceRepository) GetByPlanID(ctx context.Context, planID string) ([]*pr
 	rows, err := r.db.NamedQueryContext(ctx, query, map[string]interface{}{
 		"plan_id":   planID,
 		"tenant_id": types.GetTenantID(ctx),
-		"status":    types.StatusActive,
+		"status":    types.StatusPublished,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to get prices: %w", err)
@@ -119,7 +119,7 @@ func (r *priceRepository) List(ctx context.Context, filter types.Filter) ([]*pri
 	// First, prepare the named query
 	rows, err := r.db.NamedQueryContext(ctx, query, map[string]interface{}{
 		"tenant_id": types.GetTenantID(ctx),
-		"status":    types.StatusActive,
+		"status":    types.StatusPublished,
 		"limit":     filter.Limit,
 		"offset":    filter.Offset,
 	})

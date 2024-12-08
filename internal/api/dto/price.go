@@ -126,7 +126,7 @@ func (r *CreatePriceRequest) ToPrice(ctx context.Context) *price.Price {
 		Transform:          transform,
 		BaseModel: types.BaseModel{
 			TenantID:  types.GetTenantID(ctx),
-			Status:    types.StatusActive,
+			Status:    types.StatusPublished,
 			CreatedAt: time.Now().UTC(),
 			UpdatedAt: time.Now().UTC(),
 			CreatedBy: types.GetUserID(ctx),

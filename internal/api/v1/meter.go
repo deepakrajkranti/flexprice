@@ -48,7 +48,7 @@ func (h *MeterHandler) CreateMeter(c *gin.Context) {
 }
 
 // @Summary List meters
-// @Description Get all active meters
+// @Description Get all meters
 // @Tags meters
 // @Produce json
 // @Security BearerAuth

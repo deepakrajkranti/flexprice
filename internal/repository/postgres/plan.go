@@ -104,7 +104,7 @@ func (r *planRepository) List(ctx context.Context, filter types.Filter) ([]*plan
 	var plans []*plan.Plan
 	rows, err := r.db.NamedQueryContext(ctx, query, map[string]interface{}{
 		"tenant_id": types.GetTenantID(ctx),
-		"status":    types.StatusActive,
+		"status":    types.StatusPublished,
 		"limit":     filter.Limit,
 		"offset":    filter.Offset,
 	})

@@ -6,9 +6,8 @@ package types
 type Status string
 
 const (
-	// StatusActive is the status of a resource that is a valid and in use record
-	// This is typically used for data that is currently in use and should be returned in queries
-	StatusActive Status = "active"
+	// StatusPublished is the status of a resource that is published and visible to users
+	StatusPublished Status = "published"
 
 	// StatusDeleted is the status of a resource that is deleted and not in use
 	// This is typically used for data that is no longer in use and should be removed from the database

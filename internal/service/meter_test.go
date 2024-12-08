@@ -142,7 +142,7 @@ func (s *MeterServiceSuite) TestGetAllMeters() {
 			Type:  types.AggregationSum,
 			Field: "duration_ms",
 		}
-		m.BaseModel.Status = types.StatusActive
+		m.BaseModel.Status = types.StatusPublished
 
 		err := s.store.CreateMeter(s.ctx, m)
 		s.NoError(err)
@@ -161,7 +161,7 @@ func (s *MeterServiceSuite) TestDisableMeter() {
 	testMeter := meter.NewMeter("", "tenant-1", "test-user")
 	testMeter.EventName = "api_request" // Replaced Filters with EventName
 	testMeter.BaseModel = types.BaseModel{
-		Status: types.StatusActive,
+		Status: types.StatusPublished,
 	}
 
 	err := s.store.CreateMeter(s.ctx, testMeter)

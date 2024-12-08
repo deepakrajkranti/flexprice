@@ -8,10 +8,38 @@ type SubscriptionStatus string
 const (
 	SubscriptionStatusActive            SubscriptionStatus = "active"
 	SubscriptionStatusPaused            SubscriptionStatus = "paused"
-	SubscriptionStatusCanceled          SubscriptionStatus = "canceled"
+	SubscriptionStatusCancelled         SubscriptionStatus = "cancelled"
 	SubscriptionStatusIncomplete        SubscriptionStatus = "incomplete"
 	SubscriptionStatusIncompleteExpired SubscriptionStatus = "incomplete_expired"
 	SubscriptionStatusPastDue           SubscriptionStatus = "past_due"
 	SubscriptionStatusTrialing          SubscriptionStatus = "trialing"
 	SubscriptionStatusUnpaid            SubscriptionStatus = "unpaid"
 )
+
+type SubscriptionFilter struct {
+	Filter
+	CustomerID string             `form:"customer_id"`
+	Status     SubscriptionStatus `form:"status"`
+	PlanID     string             `form:"plan_id"`
+}
+
+func (f *SubscriptionFilter) ToMap() map[string]interface{} {
+	params := map[string]interface{}{
+		"offset": f.Offset,
+		"limit":  f.Limit,
+	}
+
+	if f.CustomerID != "" {
+		params["customer_id"] = f.CustomerID
+	}
+
+	if f.Status != "" {
+		params["status"] = f.Status
+	}
+
+	if f.PlanID != "" {
+		params["plan_id"] = f.PlanID
+	}
+
+	return params
+}

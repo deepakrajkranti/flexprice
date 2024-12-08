@@ -142,6 +142,31 @@ definitions:
     - currency
     - type
     type: object
+  dto.CreateSubscriptionRequest:
+    properties:
+      currency:
+        type: string
+      customer_id:
+        type: string
+      end_date:
+        type: string
+      invoice_cadence:
+        $ref: '#/definitions/types.InvoiceCadence'
+      lookup_key:
+        type: string
+      plan_id:
+        type: string
+      start_date:
+        type: string
+      trial_end:
+        type: string
+      trial_start:
+        type: string
+    required:
+    - currency
+    - customer_id
+    - plan_id
+    type: object
   dto.CustomerResponse:
     properties:
       created_at:
@@ -270,6 +295,19 @@ definitions:
       total:
         type: integer
     type: object
+  dto.ListSubscriptionsResponse:
+    properties:
+      limit:
+        type: integer
+      offset:
+        type: integer
+      subscriptions:
+        items:
+          $ref: '#/definitions/dto.SubscriptionResponse'
+        type: array
+      total:
+        type: integer
+    type: object
   dto.LoginRequest:
     properties:
       email:
@@ -295,7 +333,7 @@ definitions:
         example: 550e8400-e29b-41d4-a716-446655440000
         type: string
       status:
-        example: ACTIVE
+        example: published
         type: string
       tenant_id:
         example: tenant123
@@ -314,6 +352,8 @@ definitions:
         type: string
       id:
         type: string
+      invoice_cadence:
+        $ref: '#/definitions/types.InvoiceCadence'
       lookup_key:
         type: string
       name:
@@ -326,6 +366,8 @@ definitions:
         $ref: '#/definitions/types.Status'
       tenant_id:
         type: string
+      trial_period:
+        type: integer
       updated_at:
         type: string
       updated_by:
@@ -426,6 +468,86 @@ definitions:
     required:
     - email
     - password
+    type: object
+  dto.SubscriptionResponse:
+    properties:
+      billing_anchor:
+        description: |-
+          BillingAnchor is the reference point that aligns future billing cycle dates.
+          It sets the day of week for week intervals, the day of month for month and year intervals,
+          and the month of year for year intervals. The timestamp is in UTC format.
+        type: string
+      cancel_at:
+        description: CancelAt is the date the subscription will be canceled
+        type: string
+      cancel_at_period_end:
+        description: CancelAtPeriodEnd is whether the subscription was canceled at
+          the end of the current period
+        type: boolean
+      cancelled_at:
+        description: CanceledAt is the date the subscription was canceled
+        type: string
+      created_at:
+        type: string
+      created_by:
+        type: string
+      currency:
+        description: Currency is the currency of the subscription in lowercase 3 digit
+          ISO codes
+        type: string
+      current_period_end:
+        description: |-
+          CurrentPeriodEnd is the end of the current period that the subscription has been invoiced for.
+          At the end of this period, a new invoice will be created.
+        type: string
+      current_period_start:
+        description: |-
+          CurrentPeriodStart is the end of the current period that the subscription has been invoiced for.
+          At the end of this period, a new invoice will be created.
+        type: string
+      customer_id:
+        description: CustomerID is the identifier for the customer in our system
+        type: string
+      end_date:
+        description: EndDate is the end date of the subscription
+        type: string
+      id:
+        description: ID is the unique identifier for the subscription
+        type: string
+      invoice_cadence:
+        allOf:
+        - $ref: '#/definitions/types.InvoiceCadence'
+        description: InvoiceCadence is the cadence of the invoice. This overrides
+          the plan's invoice cadence.
+      lookup_key:
+        description: LookupKey is the key used to lookup the subscription in our system
+        type: string
+      plan:
+        $ref: '#/definitions/dto.PlanResponse'
+      plan_id:
+        description: PlanID is the identifier for the plan in our system
+        type: string
+      start_date:
+        description: StartDate is the start date of the subscription
+        type: string
+      status:
+        $ref: '#/definitions/types.Status'
+      subscription_status:
+        allOf:
+        - $ref: '#/definitions/types.SubscriptionStatus'
+        description: Status is the status of the subscription
+      tenant_id:
+        type: string
+      trial_end:
+        description: TrialEnd is the end date of the trial period
+        type: string
+      trial_start:
+        description: TrialStart is the start date of the trial period
+        type: string
+      updated_at:
+        type: string
+      updated_by:
+        type: string
     type: object
   dto.UpdateCustomerRequest:
     properties:
@@ -543,6 +665,8 @@ definitions:
         type: string
       id:
         type: string
+      invoice_cadence:
+        $ref: '#/definitions/types.InvoiceCadence'
       lookup_key:
         type: string
       name:
@@ -551,6 +675,8 @@ definitions:
         $ref: '#/definitions/types.Status'
       tenant_id:
         type: string
+      trial_period:
+        type: integer
       updated_at:
         type: string
       updated_by:
@@ -650,6 +776,14 @@ definitions:
     x-enum-varnames:
     - BILLING_TIER_VOLUME
     - BILLING_TIER_SLAB
+  types.InvoiceCadence:
+    enum:
+    - arrear
+    - advance
+    type: string
+    x-enum-varnames:
+    - InvoiceCadenceArrear
+    - InvoiceCadenceAdvance
   types.PriceType:
     enum:
     - USAGE
@@ -660,14 +794,34 @@ definitions:
     - PRICE_TYPE_FIXED
   types.Status:
     enum:
-    - active
+    - published
     - deleted
     - archived
     type: string
     x-enum-varnames:
-    - StatusActive
+    - StatusPublished
     - StatusDeleted
     - StatusArchived
+  types.SubscriptionStatus:
+    enum:
+    - active
+    - paused
+    - cancelled
+    - incomplete
+    - incomplete_expired
+    - past_due
+    - trialing
+    - unpaid
+    type: string
+    x-enum-varnames:
+    - SubscriptionStatusActive
+    - SubscriptionStatusPaused
+    - SubscriptionStatusCancelled
+    - SubscriptionStatusIncomplete
+    - SubscriptionStatusIncompleteExpired
+    - SubscriptionStatusPastDue
+    - SubscriptionStatusTrialing
+    - SubscriptionStatusUnpaid
   v1.ErrorResponse:
     properties:
       error:
@@ -1086,7 +1240,7 @@ paths:
       - events
   /meters:
     get:
-      description: Get all active meters
+      description: Get all meters
       produces:
       - application/json
       responses:
@@ -1564,6 +1718,145 @@ paths:
       summary: Update a price
       tags:
       - prices
+  /subscriptions:
+    get:
+      description: Get subscriptions with optional filtering
+      parameters:
+      - description: Filter by customer ID
+        in: query
+        name: customer_id
+        type: string
+      - description: Filter by status
+        in: query
+        name: status
+        type: string
+      - description: Filter by plan ID
+        in: query
+        name: plan_id
+        type: string
+      - description: Offset for pagination
+        in: query
+        name: offset
+        type: integer
+      - description: Limit for pagination
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.ListSubscriptionsResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/v1.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/v1.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: List subscriptions
+      tags:
+      - subscriptions
+    post:
+      consumes:
+      - application/json
+      description: Create a new subscription
+      parameters:
+      - description: Subscription Request
+        in: body
+        name: subscription
+        required: true
+        schema:
+          $ref: '#/definitions/dto.CreateSubscriptionRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/dto.SubscriptionResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/v1.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/v1.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Create subscription
+      tags:
+      - subscriptions
+  /subscriptions/{id}:
+    get:
+      description: Get a subscription by ID
+      parameters:
+      - description: Subscription ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.SubscriptionResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/v1.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/v1.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get subscription
+      tags:
+      - subscriptions
+  /subscriptions/{id}/cancel:
+    post:
+      consumes:
+      - application/json
+      description: Cancel a subscription
+      parameters:
+      - description: Subscription ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Cancel at period end
+        in: query
+        name: cancel_at_period_end
+        type: boolean
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/gin.H'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/v1.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/v1.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Cancel subscription
+      tags:
+      - subscriptions
   /users/me:
     get:
       consumes:

@@ -52,7 +52,7 @@ func NewMeter(id string, tenantID, createdBy string) *Meter {
 			UpdatedAt: now,
 			CreatedBy: createdBy,
 			UpdatedBy: createdBy,
-			Status:    types.StatusActive,
+			Status:    types.StatusPublished,
 		},
 	}
 }

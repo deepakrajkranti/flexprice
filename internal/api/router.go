@@ -12,17 +12,20 @@ import (
 )
 
 type Handlers struct {
-	Events   *v1.EventsHandler
-	Meter    *v1.MeterHandler
-	Auth     *v1.AuthHandler
-	User     *v1.UserHandler
-	Health   *v1.HealthHandler
-	Price    *v1.PriceHandler
-	Customer *v1.CustomerHandler
-	Plan     *v1.PlanHandler
+	Events       *v1.EventsHandler
+	Meter        *v1.MeterHandler
+	Auth         *v1.AuthHandler
+	User         *v1.UserHandler
+	Health       *v1.HealthHandler
+	Price        *v1.PriceHandler
+	Customer     *v1.CustomerHandler
+	Plan         *v1.PlanHandler
+	Subscription *v1.SubscriptionHandler
 }
 
 func NewRouter(handlers Handlers, cfg *config.Configuration, logger *logger.Logger) *gin.Engine {
+	gin.SetMode(gin.ReleaseMode)
+
 	router := gin.Default()
 	router.Use(
 		middleware.RequestIDMiddleware,
@@ -106,6 +109,14 @@ func NewRouter(handlers Handlers, cfg *config.Configuration, logger *logger.Logg
 			plan.GET("/:id", handlers.Plan.GetPlan)
 			plan.PUT("/:id", handlers.Plan.UpdatePlan)
 			plan.DELETE("/:id", handlers.Plan.DeletePlan)
+		}
+
+		subscription := v1Private.Group("/subscriptions")
+		{
+			subscription.POST("", handlers.Subscription.CreateSubscription)
+			subscription.GET("", handlers.Subscription.GetSubscriptions)
+			subscription.GET("/:id", handlers.Subscription.GetSubscription)
+			subscription.POST("/:id/cancel", handlers.Subscription.CancelSubscription)
 		}
 	}
 	return router

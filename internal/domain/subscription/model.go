@@ -20,7 +20,7 @@ type Subscription struct {
 	PlanID string `db:"plan_id" json:"plan_id"`
 
 	// Status is the status of the subscription
-	Status types.SubscriptionStatus `db:"status" json:"status"`
+	SubscriptionStatus types.SubscriptionStatus `db:"subscription_status" json:"subscription_status"`
 
 	// Currency is the currency of the subscription in lowercase 3 digit ISO codes
 	Currency string `db:"currency" json:"currency"`
@@ -58,6 +58,9 @@ type Subscription struct {
 
 	// TrialEnd is the end date of the trial period
 	TrialEnd *time.Time `db:"trial_end" json:"trial_end"`
+
+	// InvoiceCadence is the cadence of the invoice. This overrides the plan's invoice cadence.
+	InvoiceCadence types.InvoiceCadence `db:"invoice_cadence" json:"invoice_cadence"`
 
 	types.BaseModel
 }

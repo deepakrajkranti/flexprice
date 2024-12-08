@@ -96,7 +96,7 @@ func (r *meterRepository) GetAllMeters(ctx context.Context) ([]*meter.Meter, err
 		id, tenant_id, event_name, aggregation, 
 		created_at, updated_at, created_by, updated_by, status
 	FROM meters
-	WHERE status = 'active' AND tenant_id = $1
+	WHERE status = 'published' AND tenant_id = $1
 	ORDER BY created_at DESC
 	`
 
@@ -140,7 +140,7 @@ func (r *meterRepository) DisableMeter(ctx context.Context, id string) error {
 	query := `
 		UPDATE meters 
 		SET status = 'disabled', updated_at = NOW(), updated_by = $1
-		WHERE id = $2 AND tenant_id = $3 AND status = 'active'
+		WHERE id = $2 AND tenant_id = $3 AND status = 'published'
 	`
 
 	result, err := r.db.ExecContext(ctx, query, types.GetUserID(ctx), id, types.GetTenantID(ctx))
