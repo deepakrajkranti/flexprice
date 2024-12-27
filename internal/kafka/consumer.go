@@ -8,7 +8,9 @@ import (
 	"github.com/ThreeDotsLabs/watermill-kafka/v2/pkg/kafka"
 	"github.com/ThreeDotsLabs/watermill/message"
 	"github.com/flexprice/flexprice/internal/config"
+	"github.com/flexprice/flexprice/internal/logger"
 	"github.com/flexprice/flexprice/internal/types"
+	"go.uber.org/zap"
 )
 
 type MessageConsumer interface {
@@ -19,21 +21,47 @@ type MessageConsumer interface {
 type Consumer struct {
 	subscriber message.Subscriber
 	cfg        *config.Configuration
+	logger     *logger.Logger
+
+	// Metrics
+	lastProcessedTime time.Time
+	messageCount      int64
 }
 
-func NewConsumer(cfg *config.Configuration) (MessageConsumer, error) {
+// EstimatedThroughput calculates the estimated messages per second based on configuration
+func EstimatedThroughput(cfg *config.KafkaConfig) float64 {
+	// Average message size estimation (adjust based on your actual message size)
+	avgMessageSize := int32(1024) // 1KB
+
+	// Calculate messages that can fit in one fetch
+	msgsPerFetch := int32(cfg.Consumer.FetchSize) / avgMessageSize
+
+	// Calculate fetches per second based on MaxWaitTime
+	fetchesPerSecond := float64(time.Second) / float64(cfg.Consumer.MaxWaitTime)
+
+	// Theoretical max throughput
+	return float64(msgsPerFetch) * fetchesPerSecond
+}
+
+func NewConsumer(cfg *config.Configuration, log *logger.Logger) (MessageConsumer, error) {
 	enableDebugLogs := cfg.Logging.Level == types.LogLevelDebug
 
 	saramaConfig := GetSaramaConfig(cfg)
 	if saramaConfig != nil {
-		// Optimize consumer configs for throughput
-		// TODO: move this to config
-		saramaConfig.Consumer.Group.Session.Timeout = 45000 * time.Millisecond
-		saramaConfig.Consumer.Fetch.Min = 1                        // Minimum number of bytes to fetch in a request
-		saramaConfig.Consumer.Fetch.Max = 10 * 1024 * 1024         // Maximum number of bytes to fetch (10MB)
-		saramaConfig.Consumer.Fetch.Default = 1024 * 1024          // Default fetch size (1MB)
-		saramaConfig.Consumer.MaxWaitTime = 100 * time.Millisecond // Max time to wait for new data
-		saramaConfig.Consumer.MaxProcessingTime = 500 * time.Millisecond
+		// Use configuration parameters for consumer tuning
+		saramaConfig.Consumer.Group.Session.Timeout = cfg.Kafka.Consumer.SessionTimeout
+		saramaConfig.Consumer.Fetch.Min = cfg.Kafka.Consumer.FetchMin
+		saramaConfig.Consumer.Fetch.Default = cfg.Kafka.Consumer.FetchSize
+		saramaConfig.Consumer.MaxWaitTime = cfg.Kafka.Consumer.MaxWaitTime
+		saramaConfig.Consumer.MaxProcessingTime = cfg.Kafka.Consumer.MaxProcessingTime
+
+		// Log estimated throughput
+		estimatedThroughput := EstimatedThroughput(&cfg.Kafka)
+		log.With(
+			zap.Float64("estimated_msgs_per_sec", estimatedThroughput),
+			zap.Int32("fetch_size_bytes", cfg.Kafka.Consumer.FetchSize),
+			zap.Duration("max_wait_time", cfg.Kafka.Consumer.MaxWaitTime),
+		).Info("estimated kafka consumer throughput")
 	}
 
 	subscriber, err := kafka.NewSubscriber(
@@ -51,13 +79,56 @@ func NewConsumer(cfg *config.Configuration) (MessageConsumer, error) {
 	}
 
 	return &Consumer{
-		subscriber: subscriber,
-		cfg:        cfg,
+		subscriber:        subscriber,
+		cfg:               cfg,
+		logger:            log,
+		lastProcessedTime: time.Now(),
 	}, nil
 }
 
 func (c *Consumer) Subscribe(topic string) (<-chan *message.Message, error) {
-	return c.subscriber.Subscribe(context.Background(), topic)
+	messages, err := c.subscriber.Subscribe(context.Background(), topic)
+	if err != nil {
+		return nil, err
+	}
+
+	// Create a monitoring channel
+	monitoredChan := make(chan *message.Message)
+
+	// Start throughput monitoring
+	go func() {
+		ticker := time.NewTicker(5 * time.Second)
+		defer ticker.Stop()
+
+		for {
+			select {
+			case <-ticker.C:
+				now := time.Now()
+				duration := now.Sub(c.lastProcessedTime).Seconds()
+				if duration > 0 {
+					throughput := float64(c.messageCount) / duration
+					c.logger.With(
+						zap.Float64("messages_per_second", throughput),
+						zap.Int64("total_messages", c.messageCount),
+						zap.Duration("duration", now.Sub(c.lastProcessedTime)),
+					).Info("kafka consumer throughput")
+				}
+				c.messageCount = 0
+				c.lastProcessedTime = now
+			}
+		}
+	}()
+
+	// Forward messages with monitoring
+	go func() {
+		for msg := range messages {
+			c.messageCount++
+			monitoredChan <- msg
+		}
+		close(monitoredChan)
+	}()
+
+	return monitoredChan, nil
 }
 
 func (c *Consumer) Close() error {

@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/ClickHouse/clickhouse-go/v2"
 	"github.com/Shopify/sarama"
@@ -57,6 +58,20 @@ type KafkaConfig struct {
 	SASLUser      string               `mapstructure:"sasl_user"`
 	SASLPassword  string               `mapstructure:"sasl_password"`
 	ClientID      string               `mapstructure:"client_id" validate:"required"`
+
+	// Consumer tuning parameters
+	Consumer struct {
+		// Maximum fetch size per partition in bytes (default: 1MB)
+		FetchSize int32 `mapstructure:"fetch_size" default:"1048576"`
+		// Minimum number of bytes to accumulate before consuming (default: 1)
+		FetchMin int32 `mapstructure:"fetch_min" default:"1"`
+		// Maximum time to wait for FetchMin bytes (default: 100ms)
+		MaxWaitTime time.Duration `mapstructure:"max_wait_time" default:"100ms"`
+		// Maximum time to process a message (default: 500ms)
+		MaxProcessingTime time.Duration `mapstructure:"max_processing_time" default:"500ms"`
+		// Consumer group session timeout (default: 45s)
+		SessionTimeout time.Duration `mapstructure:"session_timeout" default:"45s"`
+	} `mapstructure:"consumer"`
 }
 
 type ClickHouseConfig struct {
