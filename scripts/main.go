@@ -88,6 +88,11 @@ var commands = []Command{
 		Description: "Add a new user to a tenant",
 		Run:         internal.AddNewUserToTenant,
 	},
+	{
+		Name:        "copy-environment",
+		Description: "Copy features, meters, plans, and prices from one environment to another",
+		Run:         runCopyEnvironmentCommand,
+	},
 }
 
 // runBulkReprocessEventsCommand wraps the bulk reprocess events with command line parameters
@@ -118,27 +123,49 @@ func runBulkReprocessEventsCommand() error {
 	return internal.BulkReprocessEvents(params)
 }
 
+// runCopyEnvironmentCommand wraps the copy environment command with command line parameters
+func runCopyEnvironmentCommand() error {
+	tenantID := os.Getenv("TENANT_ID")
+	sourceEnvID := os.Getenv("SOURCE_ENVIRONMENT_ID")
+	targetEnvID := os.Getenv("TARGET_ENVIRONMENT_ID")
+	scope := os.Getenv("COPY_SCOPE")
+
+	if tenantID == "" || sourceEnvID == "" || targetEnvID == "" {
+		return fmt.Errorf("TENANT_ID, SOURCE_ENVIRONMENT_ID, and TARGET_ENVIRONMENT_ID are required")
+	}
+
+	// Validate scope
+	if scope != "published" && scope != "all" {
+		return fmt.Errorf("invalid scope: %s. Must be 'published' or 'all'", scope)
+	}
+
+	return internal.CopyEnvironment()
+}
+
 func main() {
 	// Define command line flags
 	var (
-		listCommands       bool
-		cmdName            string
-		email              string
-		tenant             string
-		metersFile         string
-		plansFile          string
-		tenantID           string
-		userID             string
-		password           string
-		environmentID      string
-		filePath           string
-		planID             string
-		apiKey             string
-		externalCustomerID string
-		eventName          string
-		startTime          string
-		endTime            string
-		batchSize          string
+		listCommands        bool
+		cmdName             string
+		email               string
+		tenant              string
+		metersFile          string
+		plansFile           string
+		tenantID            string
+		userID              string
+		password            string
+		environmentID       string
+		filePath            string
+		planID              string
+		apiKey              string
+		externalCustomerID  string
+		eventName           string
+		startTime           string
+		endTime             string
+		batchSize           string
+		sourceEnvironmentID string
+		targetEnvironmentID string
+		scope               string
 	)
 
 	flag.BoolVar(&listCommands, "list", false, "List all available commands")
@@ -159,6 +186,9 @@ func main() {
 	flag.StringVar(&startTime, "start-time", "", "Start time for reprocessing (ISO-8601 format)")
 	flag.StringVar(&endTime, "end-time", "", "End time for reprocessing (ISO-8601 format)")
 	flag.StringVar(&batchSize, "batch-size", "100", "Batch size for reprocessing")
+	flag.StringVar(&sourceEnvironmentID, "source-environment-id", "", "Source environment ID for copying")
+	flag.StringVar(&targetEnvironmentID, "target-environment-id", "", "Target environment ID for copying")
+	flag.StringVar(&scope, "scope", "published", "Scope for copying: 'published' or 'all'")
 	flag.Parse()
 
 	if listCommands {
@@ -221,6 +251,15 @@ func main() {
 	}
 	if batchSize != "" {
 		os.Setenv("BATCH_SIZE", batchSize)
+	}
+	if sourceEnvironmentID != "" {
+		os.Setenv("SOURCE_ENVIRONMENT_ID", sourceEnvironmentID)
+	}
+	if targetEnvironmentID != "" {
+		os.Setenv("TARGET_ENVIRONMENT_ID", targetEnvironmentID)
+	}
+	if scope != "" {
+		os.Setenv("COPY_SCOPE", scope)
 	}
 
 	// Find and run the command
