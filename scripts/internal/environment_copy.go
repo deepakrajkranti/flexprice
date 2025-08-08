@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/flexprice/flexprice/ent"
@@ -21,6 +22,36 @@ import (
 	"github.com/samber/lo"
 )
 
+// CopySummary tracks the statistics for the environment copy operation
+type CopySummary struct {
+	Features struct {
+		Total      int `json:"total"`
+		Successful int `json:"successful"`
+		Failed     int `json:"failed"`
+	} `json:"features"`
+	Meters struct {
+		Total      int `json:"total"`
+		Successful int `json:"successful"`
+		Failed     int `json:"failed"`
+	} `json:"meters"`
+	Plans struct {
+		Total      int `json:"total"`
+		Successful int `json:"successful"`
+		Failed     int `json:"failed"`
+	} `json:"plans"`
+	Prices struct {
+		Total      int `json:"total"`
+		Successful int `json:"successful"`
+		Failed     int `json:"failed"`
+		Skipped    int `json:"skipped"`
+	} `json:"prices"`
+	FeatureMeterUpdates struct {
+		Total      int `json:"total"`
+		Successful int `json:"successful"`
+		Failed     int `json:"failed"`
+	} `json:"feature_meter_updates"`
+}
+
 type environmentCopyScript struct {
 	cfg         *config.Configuration
 	log         *logger.Logger
@@ -30,6 +61,7 @@ type environmentCopyScript struct {
 	priceRepo   price.Repository
 	entClient   *ent.Client
 	pgClient    postgres.IClient
+	summary     *CopySummary
 }
 
 // This script copies features, meters, plans, and prices from one environment to another within the same tenant.
@@ -135,6 +167,9 @@ func CopyEnvironment() error {
 		return fmt.Errorf("failed to initialize script: %w", err)
 	}
 
+	// Initialize summary
+	script.summary = &CopySummary{}
+
 	// Create context with tenant ID
 	ctx := context.WithValue(context.Background(), types.CtxTenantID, tenantID)
 
@@ -179,6 +214,9 @@ func CopyEnvironment() error {
 		return fmt.Errorf("failed to copy prices: %w", err)
 	}
 
+	// Print final summary
+	script.printCopySummary()
+
 	script.log.Infow("Environment copy completed successfully",
 		"tenant_id", tenantID,
 		"source_env_id", sourceEnvID,
@@ -204,6 +242,7 @@ func (s *environmentCopyScript) copyFeatures(ctx context.Context, sourceEnvID, t
 		return nil, fmt.Errorf("failed to list features: %w", err)
 	}
 
+	s.summary.Features.Total = len(features)
 	s.log.Infow("Found features to copy", "count", len(features))
 
 	featureMap := make(map[string]string)
@@ -239,14 +278,19 @@ func (s *environmentCopyScript) copyFeatures(ctx context.Context, sourceEnvID, t
 		err := s.featureRepo.Create(targetCtx, newFeature)
 		if err != nil {
 			s.log.Errorw("Failed to create feature", "feature_name", f.Name, "error", err)
+			s.summary.Features.Failed++
 			continue
 		}
 
 		featureMap[f.ID] = newFeature.ID
+		s.summary.Features.Successful++
 		s.log.Infow("Created feature", "old_id", f.ID, "new_id", newFeature.ID, "name", f.Name)
 	}
 
-	s.log.Infow("Features copy completed", "copied_count", len(featureMap))
+	s.log.Infow("Features copy completed",
+		"total", s.summary.Features.Total,
+		"successful", s.summary.Features.Successful,
+		"failed", s.summary.Features.Failed)
 	return featureMap, nil
 }
 
@@ -267,6 +311,7 @@ func (s *environmentCopyScript) copyMeters(ctx context.Context, sourceEnvID, tar
 		return nil, fmt.Errorf("failed to list meters: %w", err)
 	}
 
+	s.summary.Meters.Total = len(meters)
 	s.log.Infow("Found meters to copy", "count", len(meters))
 
 	meterMap := make(map[string]string)
@@ -297,14 +342,19 @@ func (s *environmentCopyScript) copyMeters(ctx context.Context, sourceEnvID, tar
 		err := s.meterRepo.CreateMeter(targetCtx, newMeter)
 		if err != nil {
 			s.log.Errorw("Failed to create meter", "meter_name", m.Name, "error", err)
+			s.summary.Meters.Failed++
 			continue
 		}
 
 		meterMap[m.ID] = newMeter.ID
+		s.summary.Meters.Successful++
 		s.log.Infow("Created meter", "old_id", m.ID, "new_id", newMeter.ID, "name", m.Name)
 	}
 
-	s.log.Infow("Meters copy completed", "copied_count", len(meterMap))
+	s.log.Infow("Meters copy completed",
+		"total", s.summary.Meters.Total,
+		"successful", s.summary.Meters.Successful,
+		"failed", s.summary.Meters.Failed)
 	return meterMap, nil
 }
 
@@ -325,6 +375,7 @@ func (s *environmentCopyScript) copyPlans(ctx context.Context, sourceEnvID, targ
 		return nil, fmt.Errorf("failed to list plans: %w", err)
 	}
 
+	s.summary.Plans.Total = len(plans)
 	s.log.Infow("Found plans to copy", "count", len(plans))
 
 	planMap := make(map[string]string)
@@ -353,14 +404,19 @@ func (s *environmentCopyScript) copyPlans(ctx context.Context, sourceEnvID, targ
 		err := s.planRepo.Create(targetCtx, newPlan)
 		if err != nil {
 			s.log.Errorw("Failed to create plan", "plan_name", p.Name, "error", err)
+			s.summary.Plans.Failed++
 			continue
 		}
 
 		planMap[p.ID] = newPlan.ID
+		s.summary.Plans.Successful++
 		s.log.Infow("Created plan", "old_id", p.ID, "new_id", newPlan.ID, "name", p.Name)
 	}
 
-	s.log.Infow("Plans copy completed", "copied_count", len(planMap))
+	s.log.Infow("Plans copy completed",
+		"total", s.summary.Plans.Total,
+		"successful", s.summary.Plans.Successful,
+		"failed", s.summary.Plans.Failed)
 	return planMap, nil
 }
 
@@ -380,6 +436,7 @@ func (s *environmentCopyScript) copyPrices(ctx context.Context, sourceEnvID, tar
 		return fmt.Errorf("failed to list prices: %w", err)
 	}
 
+	s.summary.Prices.Total = len(prices)
 	s.log.Infow("Found prices to copy", "count", len(prices))
 
 	// Create context with target environment
@@ -393,6 +450,7 @@ func (s *environmentCopyScript) copyPrices(ctx context.Context, sourceEnvID, tar
 		if !planExists {
 			s.log.Warnw("Skipping price - plan not found in target environment",
 				"price_id", p.ID, "plan_id", p.PlanID)
+			s.summary.Prices.Skipped++
 			continue
 		}
 
@@ -442,6 +500,7 @@ func (s *environmentCopyScript) copyPrices(ctx context.Context, sourceEnvID, tar
 			} else {
 				s.log.Warnw("Skipping price - meter not found in target environment",
 					"price_id", p.ID, "meter_id", p.MeterID)
+				s.summary.Prices.Skipped++
 				continue
 			}
 		}
@@ -454,11 +513,17 @@ func (s *environmentCopyScript) copyPrices(ctx context.Context, sourceEnvID, tar
 	if len(newPrices) > 0 {
 		err = s.priceRepo.CreateBulk(targetCtx, newPrices)
 		if err != nil {
+			s.summary.Prices.Failed = len(newPrices)
 			return fmt.Errorf("failed to create prices in bulk: %w", err)
 		}
+		s.summary.Prices.Successful = len(newPrices)
 	}
 
-	s.log.Infow("Prices copy completed", "copied_count", len(newPrices))
+	s.log.Infow("Prices copy completed",
+		"total", s.summary.Prices.Total,
+		"successful", s.summary.Prices.Successful,
+		"failed", s.summary.Prices.Failed,
+		"skipped", s.summary.Prices.Skipped)
 	return nil
 }
 
@@ -476,6 +541,7 @@ func (s *environmentCopyScript) updateFeatureMeterReferences(ctx context.Context
 		return fmt.Errorf("failed to list features: %w", err)
 	}
 
+	s.summary.FeatureMeterUpdates.Total = len(features)
 	updatedCount := 0
 	for _, f := range features {
 		// Check if this feature has a meter ID that needs to be updated
@@ -489,15 +555,61 @@ func (s *environmentCopyScript) updateFeatureMeterReferences(ctx context.Context
 				err := s.featureRepo.Update(targetCtx, f)
 				if err != nil {
 					s.log.Errorw("Failed to update feature meter reference", "feature_id", f.ID, "error", err)
+					s.summary.FeatureMeterUpdates.Failed++
 					continue
 				}
 
 				updatedCount++
+				s.summary.FeatureMeterUpdates.Successful++
 				s.log.Infow("Updated feature meter reference", "feature_id", f.ID, "old_meter_id", f.MeterID, "new_meter_id", newMeterID)
 			}
 		}
 	}
 
-	s.log.Infow("Feature meter references update completed", "updated_count", updatedCount)
+	s.log.Infow("Feature meter references update completed",
+		"total", s.summary.FeatureMeterUpdates.Total,
+		"successful", s.summary.FeatureMeterUpdates.Successful,
+		"failed", s.summary.FeatureMeterUpdates.Failed)
 	return nil
+}
+
+// printCopySummary prints a comprehensive summary of the copy operation
+func (s *environmentCopyScript) printCopySummary() {
+	fmt.Println("\n" + strings.Repeat("=", 80))
+	fmt.Println("ENVIRONMENT COPY SUMMARY")
+	fmt.Println(strings.Repeat("=", 80))
+
+	fmt.Printf("Features:     %d total, %d successful, %d failed\n",
+		s.summary.Features.Total, s.summary.Features.Successful, s.summary.Features.Failed)
+
+	fmt.Printf("Meters:       %d total, %d successful, %d failed\n",
+		s.summary.Meters.Total, s.summary.Meters.Successful, s.summary.Meters.Failed)
+
+	fmt.Printf("Plans:        %d total, %d successful, %d failed\n",
+		s.summary.Plans.Total, s.summary.Plans.Successful, s.summary.Plans.Failed)
+
+	fmt.Printf("Prices:       %d total, %d successful, %d failed, %d skipped\n",
+		s.summary.Prices.Total, s.summary.Prices.Successful, s.summary.Prices.Failed, s.summary.Prices.Skipped)
+
+	fmt.Printf("Meter Updates: %d total, %d successful, %d failed\n",
+		s.summary.FeatureMeterUpdates.Total, s.summary.FeatureMeterUpdates.Successful, s.summary.FeatureMeterUpdates.Failed)
+
+	// Calculate totals
+	totalProcessed := s.summary.Features.Total + s.summary.Meters.Total + s.summary.Plans.Total + s.summary.Prices.Total
+	totalSuccessful := s.summary.Features.Successful + s.summary.Meters.Successful + s.summary.Plans.Successful + s.summary.Prices.Successful
+	totalFailed := s.summary.Features.Failed + s.summary.Meters.Failed + s.summary.Plans.Failed + s.summary.Prices.Failed
+
+	fmt.Println(strings.Repeat("-", 80))
+	fmt.Printf("OVERALL:      %d total items processed\n", totalProcessed)
+	fmt.Printf("              %d successfully copied\n", totalSuccessful)
+	fmt.Printf("              %d failed to copy\n", totalFailed)
+	fmt.Printf("              %d prices skipped (missing dependencies)\n", s.summary.Prices.Skipped)
+
+	if totalFailed > 0 {
+		fmt.Println("\n⚠️  Some items failed to copy. Check the logs above for details.")
+	} else {
+		fmt.Println("\n✅ All items copied successfully!")
+	}
+
+	fmt.Println(strings.Repeat("=", 80))
 }
