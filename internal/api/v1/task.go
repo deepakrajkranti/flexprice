@@ -29,6 +29,7 @@ func NewTaskHandler(taskService service.TaskService, logger *logger.Logger) *Tas
 // @Tags Tasks
 // @Accept json
 // @Produce json
+// @Security ApiKeyAuth
 // @Param task body dto.CreateTaskRequest true "Task details"
 // @Success 201 {object} dto.TaskResponse
 // @Failure 400 {object} ierr.ErrorResponse
@@ -60,6 +61,7 @@ func (h *TaskHandler) CreateTask(c *gin.Context) {
 // @Tags Tasks
 // @Accept json
 // @Produce json
+// @Security ApiKeyAuth
 // @Param id path string true "Task ID"
 // @Success 200 {object} dto.TaskResponse
 // @Failure 404 {object} ierr.ErrorResponse
@@ -89,6 +91,7 @@ func (h *TaskHandler) GetTask(c *gin.Context) {
 // @Tags Tasks
 // @Accept json
 // @Produce json
+// @Security ApiKeyAuth
 // @Param filter query types.TaskFilter false "Filter"
 // @Success 200 {object} dto.ListTasksResponse
 // @Failure 400 {object} ierr.ErrorResponse
@@ -125,6 +128,7 @@ func (h *TaskHandler) ListTasks(c *gin.Context) {
 // @Tags Tasks
 // @Accept json
 // @Produce json
+// @Security ApiKeyAuth
 // @Param id path string true "Task ID"
 // @Param status body dto.UpdateTaskStatusRequest true "New status"
 // @Success 200 {object} dto.TaskResponse
@@ -176,6 +180,7 @@ func (h *TaskHandler) UpdateTaskStatus(c *gin.Context) {
 // @Tags Tasks
 // @Accept json
 // @Produce json
+// @Security ApiKeyAuth
 // @Param id path string true "Task ID"
 // @Success 202 {object} gin.H
 // @Failure 400 {object} ierr.ErrorResponse

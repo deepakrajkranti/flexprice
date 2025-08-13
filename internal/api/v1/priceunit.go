@@ -29,6 +29,7 @@ func NewPriceUnitHandler(service *service.PriceUnitService, log *logger.Logger) 
 // @Description Create a new price unit with the provided details
 // @Tags Price Units
 // @Accept json
+// @Security ApiKeyAuth
 // @Produce json
 // @Param body body dto.CreatePriceUnitRequest true "Price unit details"
 // @Success 201 {object} dto.PriceUnitResponse
@@ -64,6 +65,7 @@ func (h *PriceUnitHandler) CreatePriceUnit(c *gin.Context) {
 // @Tags Price Units
 // @Accept json
 // @Produce json
+// @Security ApiKeyAuth
 // @Param status query string false "Filter by status"
 // @Param limit query int false "Limit number of results"
 // @Param offset query int false "Offset for pagination"
@@ -116,6 +118,7 @@ func (h *PriceUnitHandler) GetPriceUnits(c *gin.Context) {
 // @Tags Price Units
 // @Accept json
 // @Produce json
+// @Security ApiKeyAuth
 // @Param id path string true "Price unit ID"
 // @Param body body dto.UpdatePriceUnitRequest true "Price unit details to update"
 // @Success 200 {object} dto.PriceUnitResponse
@@ -161,6 +164,7 @@ func (h *PriceUnitHandler) UpdatePriceUnit(c *gin.Context) {
 // @Tags Price Units
 // @Accept json
 // @Produce json
+// @Security ApiKeyAuth
 // @Param id path string true "Price unit ID"
 // @Success 200 {object} gin.H
 // @Failure 400 {object} ierr.ErrorResponse
@@ -204,6 +208,7 @@ func (h *PriceUnitHandler) DeletePriceUnit(c *gin.Context) {
 // @Tags Price Units
 // @Accept json
 // @Produce json
+// @Security ApiKeyAuth
 // @Param id path string true "Price unit ID"
 // @Success 200 {object} dto.PriceUnitResponse
 // @Failure 400 {object} ierr.ErrorResponse
@@ -247,6 +252,7 @@ func (h *PriceUnitHandler) GetByID(c *gin.Context) {
 // @Tags Price Units
 // @Accept json
 // @Produce json
+// @Security ApiKeyAuth
 // @Param code path string true "Price unit code"
 // @Success 200 {object} dto.PriceUnitResponse
 // @Failure 400 {object} ierr.ErrorResponse

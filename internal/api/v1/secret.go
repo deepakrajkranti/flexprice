@@ -30,6 +30,7 @@ func NewSecretHandler(service service.SecretService, logger *logger.Logger) *Sec
 // @Tags secrets
 // @Accept json
 // @Produce json
+// @Security ApiKeyAuth
 // @Param limit query int false "Limit"
 // @Param offset query int false "Offset"
 // @Param status query string false "Status (published/archived)"
@@ -68,6 +69,7 @@ func (h *SecretHandler) ListAPIKeys(c *gin.Context) {
 // @Tags secrets
 // @Accept json
 // @Produce json
+// @Security ApiKeyAuth
 // @Param request body dto.CreateAPIKeyRequest true "API key creation request"
 // @Success 201 {object} dto.CreateAPIKeyResponse
 // @Failure 400 {object} ierr.ErrorResponse
@@ -102,6 +104,7 @@ func (h *SecretHandler) CreateAPIKey(c *gin.Context) {
 // @Tags secrets
 // @Accept json
 // @Produce json
+// @Security ApiKeyAuth
 // @Param id path string true "API key ID"
 // @Success 204 "No Content"
 // @Failure 404 {object} ierr.ErrorResponse
@@ -124,6 +127,7 @@ func (h *SecretHandler) DeleteAPIKey(c *gin.Context) {
 // @Tags Integrations
 // @Accept json
 // @Produce json
+// @Security ApiKeyAuth
 // @Param provider path string true "Integration provider"
 // @Param request body dto.CreateIntegrationRequest true "Integration creation request"
 // @Success 201 {object} dto.SecretResponse
@@ -158,6 +162,7 @@ func (h *SecretHandler) CreateIntegration(c *gin.Context) {
 // @Tags Integrations
 // @Accept json
 // @Produce json
+// @Security ApiKeyAuth
 // @Param provider path string true "Integration provider"
 // @Success 200 {object} dto.SecretResponse
 // @Failure 404 {object} ierr.ErrorResponse
@@ -187,6 +192,7 @@ func (h *SecretHandler) GetIntegration(c *gin.Context) {
 // @Tags Integrations
 // @Accept json
 // @Produce json
+// @Security ApiKeyAuth
 // @Param id path string true "Integration ID"
 // @Success 204 "No Content"
 // @Failure 404 {object} ierr.ErrorResponse
@@ -210,6 +216,7 @@ func (h *SecretHandler) DeleteIntegration(c *gin.Context) {
 // @Tags Integrations
 // @Accept json
 // @Produce json
+// @Security ApiKeyAuth
 // @Success 200 {object} dto.LinkedIntegrationsResponse
 // @Failure 500 {object} ierr.ErrorResponse
 // @Router /secrets/integrations/linked [get]

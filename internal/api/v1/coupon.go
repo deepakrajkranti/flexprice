@@ -29,6 +29,7 @@ func NewCouponHandler(couponService service.CouponService, logger *logger.Logger
 // @Tags Coupons
 // @Accept json
 // @Produce json
+// @Security ApiKeyAuth
 // @Param coupon body dto.CreateCouponRequest true "Coupon request"
 // @Success 201 {object} dto.CouponResponse
 // @Failure 400 {object} ierr.ErrorResponse
@@ -61,6 +62,7 @@ func (h *CouponHandler) CreateCoupon(c *gin.Context) {
 // @Tags Coupons
 // @Accept json
 // @Produce json
+// @Security ApiKeyAuth
 // @Param id path string true "Coupon ID"
 // @Success 200 {object} dto.CouponResponse
 // @Failure 400 {object} ierr.ErrorResponse
@@ -93,6 +95,7 @@ func (h *CouponHandler) GetCoupon(c *gin.Context) {
 // @Tags Coupons
 // @Accept json
 // @Produce json
+// @Security ApiKeyAuth
 // @Param id path string true "Coupon ID"
 // @Param coupon body dto.UpdateCouponRequest true "Coupon update request"
 // @Success 200 {object} dto.CouponResponse
@@ -134,6 +137,7 @@ func (h *CouponHandler) UpdateCoupon(c *gin.Context) {
 // @Tags Coupons
 // @Accept json
 // @Produce json
+// @Security ApiKeyAuth
 // @Param id path string true "Coupon ID"
 // @Success 200 {object} map[string]string
 // @Failure 400 {object} ierr.ErrorResponse
@@ -166,6 +170,7 @@ func (h *CouponHandler) DeleteCoupon(c *gin.Context) {
 // @Tags Coupons
 // @Accept json
 // @Produce json
+// @Security ApiKeyAuth
 // @Param filter query types.CouponFilter true "Filter options"
 // @Success 200 {object} dto.ListCouponsResponse
 // @Failure 400 {object} ierr.ErrorResponse

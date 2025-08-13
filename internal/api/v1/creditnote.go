@@ -28,6 +28,7 @@ func NewCreditNoteHandler(creditNoteService service.CreditNoteService, logger *l
 // @Tags Credit Notes
 // @Accept json
 // @Produce json
+// @Security ApiKeyAuth
 // @Param credit_note body dto.CreateCreditNoteRequest true "Credit note request"
 // @Success 201 {object} dto.CreditNoteResponse
 // @Failure 400 {object} ierr.ErrorResponse
@@ -60,6 +61,7 @@ func (h *CreditNoteHandler) CreateCreditNote(c *gin.Context) {
 // @Tags Credit Notes
 // @Accept json
 // @Produce json
+// @Security ApiKeyAuth
 // @Param id path string true "Credit note ID"
 // @Success 200 {object} dto.CreditNoteResponse
 // @Failure 400 {object} ierr.ErrorResponse
@@ -92,6 +94,7 @@ func (h *CreditNoteHandler) GetCreditNote(c *gin.Context) {
 // @Tags Credit Notes
 // @Accept json
 // @Produce json
+// @Security ApiKeyAuth
 // @Param filter query types.CreditNoteFilter true "Filter options"
 // @Success 200 {object} dto.ListCreditNotesResponse
 // @Failure 400 {object} ierr.ErrorResponse
@@ -128,6 +131,7 @@ func (h *CreditNoteHandler) ListCreditNotes(c *gin.Context) {
 // @Tags Credit Notes
 // @Accept json
 // @Produce json
+// @Security ApiKeyAuth
 // @Param id path string true "Credit note ID"
 // @Success 200 {object} dto.CreditNoteResponse
 // @Failure 400 {object} ierr.ErrorResponse
@@ -160,6 +164,7 @@ func (h *CreditNoteHandler) VoidCreditNote(c *gin.Context) {
 // @Tags Credit Notes
 // @Accept json
 // @Produce json
+// @Security ApiKeyAuth
 // @Param id path string true "Credit note ID"
 // @Success 200 {object} dto.CreditNoteResponse
 // @Failure 400 {object} ierr.ErrorResponse

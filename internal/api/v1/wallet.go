@@ -281,6 +281,7 @@ func (h *WalletHandler) GetWalletBalance(c *gin.Context) {
 // @Tags Wallets
 // @Accept json
 // @Produce json
+// @Security ApiKeyAuth
 // @Param id path string true "Wallet ID"
 // @Success 200 {object} dto.WalletResponse
 // @Failure 400 {object} ierr.ErrorResponse
@@ -312,6 +313,7 @@ func (h *WalletHandler) TerminateWallet(c *gin.Context) {
 // @Tags Wallets
 // @Accept json
 // @Produce json
+// @Security ApiKeyAuth
 // @Param id path string true "Wallet ID"
 // @Param request body dto.UpdateWalletRequest true "Update wallet request"
 // @Success 200 {object} dto.WalletResponse

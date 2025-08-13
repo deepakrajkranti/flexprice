@@ -34,6 +34,7 @@ func NewInvoiceHandler(invoiceService service.InvoiceService, temporalService *t
 // @Description Create a new one off invoice with the provided details
 // @Tags Invoices
 // @Accept json
+// @Security ApiKeyAuth
 // @Produce json
 // @Param invoice body dto.CreateInvoiceRequest true "Invoice details"
 // @Success 201 {object} dto.InvoiceResponse
@@ -64,6 +65,7 @@ func (h *InvoiceHandler) CreateOneOffInvoice(c *gin.Context) {
 // @Tags Invoices
 // @Accept json
 // @Produce json
+// @Security ApiKeyAuth
 // @Param id path string true "Invoice ID"
 // @Param expand_by_source query bool false "Include source-level price breakdown for usage line items"
 // @Success 200 {object} dto.InvoiceResponse
@@ -103,6 +105,7 @@ func (h *InvoiceHandler) GetInvoice(c *gin.Context) {
 // @Tags Invoices
 // @Accept json
 // @Produce json
+// @Security ApiKeyAuth
 // @Param filter query types.InvoiceFilter false "Filter"
 // @Success 200 {object} dto.ListInvoicesResponse
 // @Failure 400 {object} ierr.ErrorResponse
@@ -143,6 +146,7 @@ func (h *InvoiceHandler) ListInvoices(c *gin.Context) {
 // @Tags Invoices
 // @Accept json
 // @Produce json
+// @Security ApiKeyAuth
 // @Param id path string true "Invoice ID"
 // @Success 200 {object} gin.H
 // @Failure 400 {object} ierr.ErrorResponse
@@ -170,6 +174,7 @@ func (h *InvoiceHandler) FinalizeInvoice(c *gin.Context) {
 // @Tags Invoices
 // @Accept json
 // @Produce json
+// @Security ApiKeyAuth
 // @Param id path string true "Invoice ID"
 // @Success 200 {object} gin.H
 // @Failure 400 {object} ierr.ErrorResponse
@@ -252,6 +257,7 @@ func (h *InvoiceHandler) UpdatePaymentStatus(c *gin.Context) {
 // @Tags Invoices
 // @Accept json
 // @Produce json
+// @Security ApiKeyAuth
 // @Param request body dto.GetPreviewInvoiceRequest true "Preview Invoice Request"
 // @Success 200 {object} dto.InvoiceResponse
 // @Failure 400 {object} ierr.ErrorResponse
@@ -329,6 +335,7 @@ func (h *InvoiceHandler) GenerateInvoice(c *gin.Context) {
 // @Tags Invoices
 // @Accept json
 // @Produce json
+// @Security ApiKeyAuth
 // @Param id path string true "Invoice ID"
 // @Success 200 {object} gin.H
 // @Failure 400 {object} ierr.ErrorResponse
@@ -358,6 +365,7 @@ func (h *InvoiceHandler) AttemptPayment(c *gin.Context) {
 // @Summary Get PDF for an invoice
 // @Description Retrieve the PDF document for a specific invoice by its ID
 // @Tags Invoices
+// @Security ApiKeyAuth
 // @Param id path string true "Invoice ID"
 // @Param url query bool false "Return presigned URL from s3 instead of PDF"
 // @Success 200 {file} application/pdf
@@ -399,6 +407,7 @@ func (h *InvoiceHandler) GetInvoicePDF(c *gin.Context) {
 // @Tags Invoices
 // @Accept json
 // @Produce json
+// @Security ApiKeyAuth
 // @Param id path string true "Invoice ID"
 // @Param finalize query bool false "Whether to finalize the invoice after recalculation (default: true)"
 // @Success 200 {object} dto.InvoiceResponse
@@ -433,6 +442,7 @@ func (h *InvoiceHandler) RecalculateInvoice(c *gin.Context) {
 // @Tags Invoices
 // @Accept json
 // @Produce json
+// @Security ApiKeyAuth
 // @Param id path string true "Invoice ID"
 // @Param request body dto.UpdateInvoiceRequest true "Invoice Update Request"
 // @Success 200 {object} dto.InvoiceResponse
@@ -506,6 +516,7 @@ func (h *InvoiceHandler) ListInvoicesByFilter(c *gin.Context) {
 // @Tags Invoices
 // @Accept json
 // @Produce json
+// @Security ApiKeyAuth
 // @Param id path string true "Invoice ID"
 // @Success 200 {object} gin.H
 // @Failure 400 {object} ierr.ErrorResponse

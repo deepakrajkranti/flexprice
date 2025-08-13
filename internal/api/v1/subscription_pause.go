@@ -29,6 +29,7 @@ func NewSubscriptionPauseHandler(service service.SubscriptionService, log *logge
 // @Tags Subscriptions
 // @Accept json
 // @Produce json
+// @Security ApiKeyAuth
 // @Param id path string true "Subscription ID"
 // @Param request body dto.PauseSubscriptionRequest true "Pause subscription request"
 // @Success 200 {object} dto.SubscriptionPauseResponse
@@ -92,6 +93,7 @@ func (h *SubscriptionPauseHandler) PauseSubscription(c *gin.Context) {
 // @Tags Subscriptions
 // @Accept json
 // @Produce json
+// @Security ApiKeyAuth
 // @Param id path string true "Subscription ID"
 // @Param request body dto.ResumeSubscriptionRequest true "Resume subscription request"
 // @Success 200 {object} dto.SubscriptionPauseResponse
