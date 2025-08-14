@@ -216,17 +216,11 @@ func (s *priceService) CreateBulkPrice(ctx context.Context, req dto.CreateBulkPr
 	return response, nil
 }
 
-// createPriceWithUnitConfig- a private helper method to create a price with a price unit config
+// createPriceWithUnitConfig creates a price with price unit configuration
 func (s *priceService) createPriceWithUnitConfig(ctx context.Context, req dto.CreatePriceRequest) (*dto.PriceResponse, error) {
 
 	if err := req.Validate(); err != nil {
 		return nil, err
-	}
-
-	if req.PlanID == "" {
-		return nil, ierr.NewError("plan_id is required").
-			WithHint("Plan ID is required").
-			Mark(ierr.ErrValidation)
 	}
 
 	// Parse price unit amount - this is the amount in the price unit currency
@@ -253,6 +247,11 @@ func (s *priceService) createPriceWithUnitConfig(ctx context.Context, req dto.Cr
 	if err != nil || priceUnit == nil {
 		return nil, ierr.NewError("invalid or unpublished price unit").
 			WithHint("Price unit must exist and be published").
+			WithReportableDetails(map[string]interface{}{
+				"price_unit": req.PriceUnitConfig.PriceUnit,
+				"tenant_id":  tenantID,
+				"env_id":     envID,
+			}).
 			Mark(ierr.ErrValidation)
 	}
 
@@ -261,6 +260,10 @@ func (s *priceService) createPriceWithUnitConfig(ctx context.Context, req dto.Cr
 	if err != nil {
 		return nil, ierr.WithError(err).
 			WithHint("Failed to convert price unit amount to base currency").
+			WithReportableDetails(map[string]interface{}{
+				"price_unit": req.PriceUnitConfig.PriceUnit,
+				"amount":     req.PriceUnitConfig.Amount,
+			}).
 			Mark(ierr.ErrInternal)
 	}
 
@@ -283,10 +286,12 @@ func (s *priceService) createPriceWithUnitConfig(ctx context.Context, req dto.Cr
 
 	var tiers price.JSONBTiers
 	var priceUnitTiers price.JSONBTiers
+
+	// Handle price unit tiers (for tiered billing model)
 	if req.PriceUnitConfig != nil && req.PriceUnitConfig.PriceUnitTiers != nil {
-		// Process price unit tiers - convert amounts from price unit to base currency
 		priceTiers := make([]price.PriceTier, len(req.PriceUnitConfig.PriceUnitTiers))
 		priceUnitTiers = make(price.JSONBTiers, len(req.PriceUnitConfig.PriceUnitTiers))
+
 		for i, tier := range req.PriceUnitConfig.PriceUnitTiers {
 			// Parse the tier unit amount (in price unit currency)
 			unitAmount, err := decimal.NewFromString(tier.UnitAmount)
@@ -376,6 +381,7 @@ func (s *priceService) createPriceWithUnitConfig(ctx context.Context, req dto.Cr
 				}
 				flatAmount = &parsed
 			}
+
 			priceTiers[i] = price.PriceTier{
 				UpTo:       tier.UpTo,
 				UnitAmount: unitAmount,
